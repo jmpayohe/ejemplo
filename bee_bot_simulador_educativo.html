@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bee-Bot: Tapete Interactivo y Juego de Programación</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+    
+    * {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    body {
+      font-family: 'Fredoka', cursive, sans-serif;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Efectos de relieve táctil para teclas de Bee-Bot */
+    .beebot-btn {
+      transition: all 0.08s ease-in-out;
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.28);
+    }
+    .beebot-btn:active, .beebot-btn.pressed {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.28);
+    }
+
+    /* Animación de alas de la abeja */
+    @keyframes wing-flutter {
+      0%, 100% { transform: rotate(0deg) scaleY(1); }
+      50% { transform: rotate(8deg) scaleY(0.85); }
+    }
+    .wing-left {
+      transform-origin: 85% 50%;
+      animation: wing-flutter 0.35s infinite ease-in-out;
+    }
+    .wing-right {
+      transform-origin: 15% 50%;
+      animation: wing-flutter 0.35s infinite ease-in-out reverse;
+    }
+
+    /* Efectos de pulso para ojos */
+    .eye-glow {
+      filter: drop-shadow(0 0 6px #38bdf8);
+    }
+
+    /* Rejilla de tapete personalizada */
+    .mat-tile {
+      aspect-ratio: 1 / 1;
+      transition: background-color 0.2s, transform 0.15s;
+    }
+
+    /* Animación del rastro */
+    @keyframes trail-fade {
+      from { opacity: 0.9; transform: scale(0.6); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .trail-dot {
+      animation: trail-fade 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-amber-50 text-slate-800 min-h-screen flex flex-col overflow-x-hidden">
+
+  <!-- Header Superior -->
+  <header class="bg-amber-400 border-b-4 border-amber-500/80 px-4 py-2.5 shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      
+      <!-- Logo y Título -->
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-yellow-300 border-2 border-amber-600 flex items-center justify-center shadow-inner text-2xl">
+          🐝
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-amber-950 flex items-center gap-2">
+            Bee-Bot Studio
+            <span class="text-xs bg-amber-600 text-white font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline-block">Infantil & Primaria</span>
+          </h1>
+          <p class="text-xs text-amber-900 font-medium hidden sm:block">Aprende pensamiento computacional y orientación espacial jugando</p>
+        </div>
+      </div>
+
+      <!-- Selector de Modo y Sonido -->
+      <div class="flex items-center gap-2">
+        <button id="btnSoundToggle" class="px-3 py-1.5 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-900 font-semibold border-2 border-amber-400 text-sm flex items-center gap-1.5 transition">
+          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+          <span class="hidden md:inline">Sonido</span>
+        </button>
+
+        <div class="bg-amber-200/90 p-1 rounded-xl flex border-2 border-amber-400 text-xs sm:text-sm font-bold">
+          <button id="modeFreeBtn" class="mode-tab px-3 py-1 rounded-lg bg-amber-500 text-white shadow-sm transition">
+            <i class="fa-solid fa-compass mr-1"></i>Libre
+          </button>
+          <button id="modeMissionsBtn" class="mode-tab px-3 py-1 rounded-lg text-amber-900 hover:text-amber-950 transition">
+            <i class="fa-solid fa-trophy mr-1"></i>Misiones
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto w-full p-2 sm:p-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+    
+    <!-- COLUMNA IZQUIERDA/CENTRAL: Tapete de suelo con la abeja (7 o 8 cols) -->
+    <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-3">
+      
+      <!-- Barra de herramientas del tapete -->
+      <div class="bg-white p-3 rounded-2xl shadow-sm border-2 border-amber-200 flex flex-wrap items-center justify-between gap-3">
+        <!-- Selector de Tapete -->
+        <div class="flex items-center gap-2">
+          <label for="matSelect" class="text-xs sm:text-sm font-bold text-amber-950 flex items-center gap-1">
+            <i class="fa-solid fa-map text-amber-500"></i> Tapete:
+          </label>
+          <select id="matSelect" class="bg-amber-100/70 border-2 border-amber-300 rounded-xl px-2.5 py-1 text-xs sm:text-sm font-semibold text-amber-950 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option value="city">🏡 La Ciudad y el Jardín</option>
+            <option value="alphabet">🔤 Abecedario & Vocales</option>
+            <option value="math">🔢 Números, Formas & Colores</option>
+            <option value="treasure">🏴‍☠️ La Isla del Tesoro</option>
+            <option value="custom">🛠️ Creador Libre (haz clic)</option>
+          </select>
+        </div>
+
+        <!-- Dimensión cuadrícula -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs sm:text-sm font-bold text-amber-950">Tamaño:</span>
+          <div class="inline-flex rounded-xl bg-amber-100 p-0.5 border border-amber-300 text-xs font-bold">
+            <button data-grid="4" class="grid-size-btn px-2.5 py-0.5 rounded-lg text-amber-900 hover:bg-amber-200">4x4</button>
+            <button data-grid="5" class="grid-size-btn px-2.5 py-0.5 rounded-lg bg-amber-500 text-white shadow-xs">5x5</button>
+            <button data-grid="6" class="grid-size-btn px-2.5 py-0.5 rounded-lg text-amber-900 hover:bg-amber-200">6x6</button>
+          </div>
+        </div>
+
+        <!-- Botón Ver Rastro -->
+        <div class="flex items-center gap-2">
+          <button id="toggleTrailBtn" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 text-xs font-bold transition flex items-center gap-1.5">
+            <i id="trailIcon" class="fa-solid fa-route text-amber-600"></i>
+            <span>Rastro: <span id="trailStatus">ON</span></span>
+          </button>
+          <button id="resetBotPosBtn" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-bold transition flex items-center gap-1.5" title="Regresar Bee-bot al origen">
+            <i class="fa-solid fa-house text-slate-500"></i>
+            <span>Origen</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner de Misión (sólo visible en modo Misión) -->
+      <div id="missionBanner" class="hidden bg-gradient-to-r from-orange-500 to-amber-500 text-white p-3 rounded-2xl shadow-sm border-2 border-orange-600 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center font-bold text-lg">
+            ⭐
+          </div>
+          <div>
+            <div class="text-xs uppercase font-extrabold tracking-wider text-orange-200" id="missionLevelTag">Misión 1 de 8</div>
+            <div class="text-sm sm:text-base font-bold" id="missionGoalText">¡Lleva a Bee-Bot a la flor roja!</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 text-yellow-300 text-base" id="missionStars">
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+        </div>
+      </div>
+
+      <!-- El Tapete / Suelo Interactivo -->
+      <div class="relative bg-white rounded-3xl p-3 sm:p-5 shadow-xl border-4 border-amber-300 overflow-hidden flex items-center justify-center">
+        <!-- Contenedor cuadrado proporcional del tapete -->
+        <div id="gridBoard" class="relative w-full max-w-[620px] aspect-square bg-amber-100/50 rounded-2xl border-4 border-dashed border-amber-300 grid gap-1.5 p-2 shadow-inner select-none">
+          <!-- Las celdas se inyectan dinámicamente con JS -->
+        </div>
+
+        <!-- Capa SVG para dibujar el rastro del robot -->
+        <svg id="trailSvg" class="absolute inset-0 w-full h-full pointer-events-none z-10 p-3 sm:p-5"></svg>
+
+        <!-- Elemento Flotante: Bee-Bot Robot (Renderizado SVG animado) -->
+        <div id="beebot" class="absolute z-20 pointer-events-none transition-all duration-300 ease-in-out flex items-center justify-center" style="width: 70px; height: 70px;">
+          <!-- SVG Completo de Bee-Bot Fiel y Realista -->
+          <svg viewBox="0 0 160 160" class="w-full h-full filter drop-shadow-md">
+            <!-- Alas translúcidas animadas -->
+            <ellipse class="wing-left" cx="45" cy="55" rx="30" ry="18" fill="rgba(224, 242, 254, 0.85)" stroke="#38bdf8" stroke-width="3" transform="rotate(-25 45 55)" />
+            <ellipse class="wing-right" cx="115" cy="55" rx="30" ry="18" fill="rgba(224, 242, 254, 0.85)" stroke="#38bdf8" stroke-width="3" transform="rotate(25 115 55)" />
+
+            <!-- Antenas en la cabeza -->
+            <path d="M 65 30 Q 55 10 40 15" stroke="#1e293b" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+            <circle cx="38" cy="15" r="5" fill="#f59e0b"/>
+            <path d="M 95 30 Q 105 10 120 15" stroke="#1e293b" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+            <circle cx="122" cy="15" r="5" fill="#f59e0b"/>
+
+            <!-- Cuerpo principal amarillo vibrante redondeado característico de Bee-Bot -->
+            <ellipse cx="80" cy="90" rx="60" ry="58" fill="#facc15" stroke="#ca8a04" stroke-width="5" />
+            
+            <!-- Franjas negras características -->
+            <path d="M 28 85 C 45 100 115 100 132 85" stroke="#1e293b" stroke-width="13" fill="none" stroke-linecap="round"/>
+            <path d="M 36 112 C 50 125 110 125 124 112" stroke="#1e293b" stroke-width="11" fill="none" stroke-linecap="round"/>
+
+            <!-- Cabeza / morro -->
+            <ellipse cx="80" cy="42" rx="44" ry="28" fill="#facc15" stroke="#ca8a04" stroke-width="4" />
+            
+            <!-- Ojos grandes de abeja de juguete con bombilla / led interior -->
+            <ellipse cx="58" cy="38" rx="14" ry="12" fill="#ffffff" stroke="#1e293b" stroke-width="3" />
+            <ellipse id="botEyeLeft" cx="58" cy="38" rx="7" ry="7" fill="#0284c7" class="transition-colors duration-200" />
+            <circle cx="55" cy="35" r="2.5" fill="#ffffff" />
+
+            <ellipse cx="102" cy="38" rx="14" ry="12" fill="#ffffff" stroke="#1e293b" stroke-width="3" />
+            <ellipse id="botEyeRight" cx="102" cy="38" rx="7" ry="7" fill="#0284c7" class="transition-colors duration-200" />
+            <circle cx="99" cy="35" r="2.5" fill="#ffffff" />
+
+            <!-- Sonrisa amigable -->
+            <path d="M 70 54 Q 80 62 90 54" stroke="#1e293b" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+            <!-- Flecha de dirección en la espalda indicando hacia dónde mira -->
+            <polygon points="80,68 70,82 90,82" fill="#e11d48" opacity="0.85" />
+          </svg>
+        </div>
+
+      </div>
+
+      <!-- Barra de Estado / Feedback Infantil -->
+      <div id="statusAlert" class="bg-amber-100 border-2 border-amber-300 rounded-2xl p-3 flex items-center justify-between text-amber-950 font-bold text-sm">
+        <div class="flex items-center gap-2">
+          <span id="statusIcon" class="text-xl">👉</span>
+          <span id="statusMessage">Pulsa los botones del lomo de Bee-Bot para programar su viaje y luego pulsa GO.</span>
+        </div>
+        <div class="text-xs text-amber-800 bg-amber-200/70 px-2 py-1 rounded-lg">
+          Posición: <span id="posIndicator" class="font-mono-code font-bold">X:0, Y:0 [N]</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COLUMNA DERECHA: El Mando Físico de Bee-Bot y la Cola de Comandos (5 o 4 cols) -->
+    <div class="lg:col-span-5 xl:col-span-4 flex flex-col gap-4">
+      
+      <!-- Caja del Mando de Botones Estilo Físico -->
+      <div class="bg-gradient-to-b from-yellow-300 via-amber-300 to-amber-400 p-4 sm:p-5 rounded-3xl border-4 border-amber-500 shadow-2xl flex flex-col items-center">
+        
+        <div class="flex items-center justify-between w-full mb-3 px-2">
+          <div class="flex items-center gap-2 text-amber-950 font-extrabold text-sm sm:text-base uppercase tracking-wider">
+            <span class="text-xl">🎛️</span> Botones de Bee-Bot
+          </div>
+          <span class="text-[11px] font-bold bg-amber-500/30 text-amber-950 px-2.5 py-0.5 rounded-full">
+            Teclado: Flechas / Enter
+          </span>
+        </div>
+
+        <!-- Mando en Cruz con los botones exactos de Bee-Bot -->
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-3 w-full max-w-[280px] p-2 bg-yellow-400/80 rounded-2xl border-2 border-amber-500/40 shadow-inner">
+          
+          <!-- Fila 1: Vacío | AVANZAR (Adelante) | Vacío -->
+          <div></div>
+          <button id="cmdForward" data-cmd="F" class="beebot-btn bg-amber-100 hover:bg-white text-blue-600 rounded-2xl p-3 sm:p-3.5 flex flex-col items-center justify-center border-2 border-blue-400 active:border-blue-600" title="Avanzar 1 casilla (Flecha Arriba)">
+            <i class="fa-solid fa-arrow-up text-2xl sm:text-3xl text-blue-600"></i>
+            <span class="text-[10px] font-black tracking-tight text-blue-900 mt-1 uppercase">Avanzar</span>
+          </button>
+          <div></div>
+
+          <!-- Fila 2: GIRAR IZQ | BOTÓN GO CENTRAL | GIRAR DER -->
+          <button id="cmdLeft" data-cmd="L" class="beebot-btn bg-amber-100 hover:bg-white text-orange-600 rounded-2xl p-2.5 sm:p-3 flex flex-col items-center justify-center border-2 border-orange-400 active:border-orange-600" title="Girar 90° a la izquierda (Flecha Izq)">
+            <i class="fa-solid fa-rotate-left text-2xl sm:text-3xl text-orange-500"></i>
+            <span class="text-[10px] font-black tracking-tight text-orange-950 mt-1 uppercase">Giro Izq</span>
+          </button>
+
+          <!-- BOTÓN GO (Grande y Verde) -->
+          <button id="cmdGo" class="beebot-btn bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl p-3 flex flex-col items-center justify-center border-2 border-emerald-700 shadow-lg active:scale-95" title="¡Ejecutar programa! (Enter)">
+            <i class="fa-solid fa-play text-2xl sm:text-3xl text-white ml-1"></i>
+            <span class="text-xs font-black tracking-wider uppercase mt-1">GO!</span>
+          </button>
+
+          <button id="cmdRight" data-cmd="R" class="beebot-btn bg-amber-100 hover:bg-white text-orange-600 rounded-2xl p-2.5 sm:p-3 flex flex-col items-center justify-center border-2 border-orange-400 active:border-orange-600" title="Girar 90° a la derecha (Flecha Der)">
+            <i class="fa-solid fa-rotate-right text-2xl sm:text-3xl text-orange-500"></i>
+            <span class="text-[10px] font-black tracking-tight text-orange-950 mt-1 uppercase">Giro Der</span>
+          </button>
+
+          <!-- Fila 3: CLEAR (Borrar) | RETROCEDER (Atrás) | PAUSE (Pausa 1s) -->
+          <button id="cmdClear" class="beebot-btn bg-rose-500 hover:bg-rose-400 text-white rounded-2xl p-2 flex flex-col items-center justify-center border-2 border-rose-700" title="Borrar todo el programa (C)">
+            <i class="fa-solid fa-xmark text-xl sm:text-2xl"></i>
+            <span class="text-[10px] font-black tracking-tight uppercase mt-0.5">Clear</span>
+          </button>
+
+          <button id="cmdBackward" data-cmd="B" class="beebot-btn bg-amber-100 hover:bg-white text-blue-600 rounded-2xl p-3 sm:p-3.5 flex flex-col items-center justify-center border-2 border-blue-400 active:border-blue-600" title="Retroceder 1 casilla (Flecha Abajo)">
+            <i class="fa-solid fa-arrow-down text-2xl sm:text-3xl text-blue-600"></i>
+            <span class="text-[10px] font-black tracking-tight text-blue-900 mt-1 uppercase">Atrás</span>
+          </button>
+
+          <button id="cmdPause" data-cmd="P" class="beebot-btn bg-sky-500 hover:bg-sky-400 text-white rounded-2xl p-2 flex flex-col items-center justify-center border-2 border-sky-700" title="Pausar 1 segundo">
+            <i class="fa-solid fa-pause text-xl sm:text-2xl"></i>
+            <span class="text-[10px] font-black tracking-tight uppercase mt-0.5">Pausa</span>
+          </button>
+
+        </div>
+
+        <!-- Selector de Velocidad -->
+        <div class="mt-4 flex items-center justify-between w-full px-2 text-xs font-bold text-amber-950">
+          <span>Velocidad de paso:</span>
+          <div class="inline-flex rounded-xl bg-amber-200/80 p-0.5 border border-amber-400">
+            <button data-speed="800" class="speed-btn px-2.5 py-1 rounded-lg text-amber-900 hover:bg-amber-300">Lenta</button>
+            <button data-speed="500" class="speed-btn px-2.5 py-1 rounded-lg bg-amber-600 text-white shadow-xs">Normal</button>
+            <button data-speed="280" class="speed-btn px-2.5 py-1 rounded-lg text-amber-900 hover:bg-amber-300">Rápida</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Visualizador de Memoria / Cola de Pasos Programados -->
+      <div class="bg-white p-4 rounded-3xl border-2 border-amber-200 shadow-md flex flex-col gap-3">
+        
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📋</span>
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Secuencia en Memoria</h3>
+          </div>
+          <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+            <span id="cmdCount">0</span> pasos (Máx 40)
+          </span>
+        </div>
+
+        <!-- Contenedor scrollable de fichas de comando -->
+        <div id="commandQueue" class="min-h-[75px] max-h-[140px] overflow-y-auto p-2 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-wrap gap-1.5 content-start items-center">
+          <div id="emptyQueueMsg" class="text-xs text-slate-400 italic w-full text-center py-4">
+            Pulsa los botones para armar la secuencia de movimientos...
+          </div>
+        </div>
+
+        <!-- Botones de Acción Secundaria de Cola -->
+        <div class="flex items-center gap-2 pt-1">
+          <button id="btnUndo" class="flex-1 py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-delete-left"></i> Deshacer uno
+          </button>
+          <button id="btnStop" class="py-1.5 px-3 rounded-xl bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-700 text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-stop"></i> Detener
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Tarjeta Didáctica para Docentes y Niños -->
+      <div class="bg-amber-100/60 p-3.5 rounded-2xl border border-amber-300/80 text-xs text-amber-950 space-y-1.5">
+        <div class="font-bold flex items-center gap-1.5 text-amber-900">
+          <i class="fa-solid fa-lightbulb text-amber-500"></i> ¿Cómo funciona el Bee-Bot?
+        </div>
+        <p class="text-slate-600 leading-relaxed">
+          1. <strong>Planifica:</strong> Mira el tapete y piensa qué movimientos necesita la abejita.<br>
+          2. <strong>Programa:</strong> Cada pulsación añade un paso a su memoria.<br>
+          3. <strong>Ejecuta:</strong> Presiona <strong>GO</strong> para que Bee-Bot realice el recorrido.<br>
+          4. Usa <strong>CLEAR</strong> para borrar y empezar una nueva aventura.
+        </p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Modal de Éxito / Victoria en Misión -->
+  <div id="victoryModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border-4 border-amber-400 p-6 max-w-sm w-full text-center shadow-2xl transform transition-all scale-95 animate-bounce-once">
+      <div class="text-5xl mb-2">🎉 🐝 🌟</div>
+      <h2 class="text-2xl font-black text-amber-950 mb-1">¡Misión Cumplida!</h2>
+      <p id="victoryDetails" class="text-sm text-slate-600 mb-4">Bee-Bot llegó con éxito a su destino.</p>
+      
+      <div id="modalStars" class="flex justify-center gap-2 text-2xl text-yellow-400 mb-5">
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="modalRepeatBtn" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
+          Repetir
+        </button>
+        <button id="modalNextBtn" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-bold text-sm shadow-md transition">
+          Siguiente Nivel ➡️
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Generador de Efectos de Sonido con Web Audio API (Sin ficheros externos) */
+    class BeeBotAudio {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // Sonido de pulsación de botón (Bip agudo y alegre característico de juguete)
+      playKeyBeep(note = 600) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(note, now);
+        osc.frequency.exponentialRampToValueAtTime(note * 1.2, now + 0.05);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      }
+
+      // Sonido de paso motorizado al avanzar o retroceder
+      playStepSound() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(330, now + 0.15);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.22);
+      }
+
+      // Sonido de giro de 90°
+      playTurnSound() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(550, now + 0.18);
+
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.22);
+      }
+
+      // Sonido de Borrado / Clear
+      playClearSound() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.2);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.24);
+      }
+
+      // Sonido de Choque / Fuera de límite / Obstáculo
+      playBumpSound() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.setValueAtTime(100, now + 0.1);
+
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.32);
+      }
+
+      // Fanfarria de victoria al completar la misión
+      playVictory() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const start = this.ctx.currentTime + idx * 0.11;
+          
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, start);
+
+          gain.gain.setValueAtTime(0.2, start);
+          gain.gain.exponentialRampToValueAtTime(0.01, start + 0.35);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.4);
+        });
+      }
+    }
+
+    const sound = new BeeBotAudio();
+
+    const MAT_THEMES = {
+      city: {
+        name: "La Ciudad y el Jardín",
+        palette: ['#ecfdf5', '#f0fdf4', '#fefce8'],
+        tiles: [
+          { emoji: "🏠", label: "Casa" },
+          { emoji: "🌳", label: "Árbol" },
+          { emoji: "🌻", label: "Girasol" },
+          { emoji: "🏫", label: "Escuela" },
+          { emoji: "⛲", label: "Fuente" },
+          { emoji: "🍓", label: "Fresas" },
+          { emoji: "🌷", label: "Tulipán" },
+          { emoji: "🍞", label: "Panadería" },
+          { emoji: "🌲", label: "Pino" },
+          { emoji: "🚲", label: "Parque" },
+          { emoji: "🐝", label: "Colmena" },
+          { emoji: "🍎", label: "Manzano" },
+          { emoji: "🌸", label: "Cerezo" },
+          { emoji: "🚒", label: "Bomberos" },
+          { emoji: "🐕", label: "Perro" },
+          { emoji: "🦋", label: "Mariposa" },
+          { emoji: "🪴", label: "Huerto" },
+          { emoji: "🌼", label: "Margarita" },
+          { emoji: "🍉", label: "Sandía" },
+          { emoji: "🏡", label: "Granja" },
+          { emoji: "🧁", label: "Pastelería" },
+          { emoji: "🐞", label: "Mariquita" },
+          { emoji: "🌾", label: "Trigo" },
+          { emoji: "🥕", label: "Zanahoria" },
+          { emoji: "⛺", label: "Camping" },
+          { emoji: "🍯", label: "Miel" },
+          { emoji: "🌿", label: "Menta" },
+          { emoji: "🐿️", label: "Ardilla" },
+          { emoji: "🪵", label: "Tronco" },
+          { emoji: "🚜", label: "Tractor" },
+          { emoji: "🐓", label: "Gallo" },
+          { emoji: "🐸", label: "Rana" },
+          { emoji: "🍄", label: "Seta" },
+          { emoji: "🦆", label: "Pato" },
+          { emoji: "🦆", label: "Estanque" },
+          { emoji: "🐾", label: "Sendero" }
+        ]
+      },
+      alphabet: {
+        name: "Abecedario & Vocales",
+        palette: ['#eff6ff', '#f5f3ff', '#fff1f2'],
+        tiles: [
+          { emoji: "🅰️", label: "Avión" },
+          { emoji: "🅱️", label: "Barco" },
+          { emoji: "©️", label: "Casa" },
+          { emoji: "🇩", label: "Dado" },
+          { emoji: "🇪", label: "Elefante" },
+          { emoji: "🇫", label: "Flor" },
+          { emoji: "🇬", label: "Gato" },
+          { emoji: "🇭", label: "Hielo" },
+          { emoji: "🇮", label: "Isla" },
+          { emoji: "🇯", label: "Jirafa" },
+          { emoji: "🇰", label: "Koala" },
+          { emoji: "🇱", label: "León" },
+          { emoji: "🇲", label: "Mano" },
+          { emoji: "🇳", label: "Nido" },
+          { emoji: "🅾️", label: "Oso" },
+          { emoji: "🇵", label: "Pelota" },
+          { emoji: "🇶", label: "Queso" },
+          { emoji: "🇷", label: "Ratón" },
+          { emoji: "🇸", label: "Sol" },
+          { emoji: "🇹", label: "Tigre" },
+          { emoji: "🇺", label: "Uvas" },
+          { emoji: "🇻", label: "Vaso" },
+          { emoji: "🇼", label: "Wifi" },
+          { emoji: "🇽", label: "Xilófono" },
+          { emoji: "🇾", label: "Yate" },
+          { emoji: "🇿", label: "Zorro" },
+          { emoji: "🌟", label: "Estrella" },
+          { emoji: "🌈", label: "Arcoíris" },
+          { emoji: "🎈", label: "Globo" },
+          { emoji: "🎨", label: "Pintura" },
+          { emoji: "🚀", label: "Cohete" },
+          { emoji: "🔔", label: "Campana" },
+          { emoji: "🧩", label: "Puzle" },
+          { emoji: "🧸", label: "Peluche" },
+          { emoji: "👑", label: "Corona" },
+          { emoji: "💎", label: "Diamante" }
+        ]
+      },
+      math: {
+        name: "Números, Formas & Colores",
+        palette: ['#fdf4ff', '#faf5ff', '#ecfeff'],
+        tiles: [
+          { emoji: "1️⃣", label: "Uno" },
+          { emoji: "2️⃣", label: "Dos" },
+          { emoji: "3️⃣", label: "Tres" },
+          { emoji: "4️⃣", label: "Cuatro" },
+          { emoji: "5️⃣", label: "Cinco" },
+          { emoji: "6️⃣", label: "Seis" },
+          { emoji: "7️⃣", label: "Siete" },
+          { emoji: "8️⃣", label: "Ocho" },
+          { emoji: "9️⃣", label: "Nueve" },
+          { emoji: "🔟", label: "Diez" },
+          { emoji: "🔴", label: "Círculo" },
+          { emoji: "🟦", label: "Cuadrado" },
+          { emoji: "🔺", label: "Triángulo" },
+          { emoji: "⭐", label: "Estrella" },
+          { emoji: "🔶", label: "Rombo" },
+          { emoji: "🟢", label: "Verde" },
+          { emoji: "🟣", label: "Morado" },
+          { emoji: "🟨", label: "Amarillo" },
+          { emoji: "➕", label: "Suma" },
+          { emoji: "➖", label: "Resta" },
+          { emoji: "🟰", label: "Igual" },
+          { emoji: "🔷", label: "Azul" },
+          { emoji: "🛑", label: "Octógono" },
+          { emoji: "🧡", label: "Naranja" },
+          { emoji: "🎲", label: "Dado" },
+          { emoji: "📐", label: "Escuadra" },
+          { emoji: "📏", label: "Regla" },
+          { emoji: "⏳", label: "Reloj" },
+          { emoji: "🧮", label: "Ábaco" },
+          { emoji: "🎯", label: "Diana" },
+          { emoji: "🪙", label: "Moneda" },
+          { emoji: "🔘", label: "Punto" },
+          { emoji: "📦", label: "Cubo" },
+          { emoji: "🔮", label: "Esfera" },
+          { emoji: "📊", label: "Gráfica" },
+          { emoji: "🧭", label: "Brújula" }
+        ]
+      },
+      treasure: {
+        name: "La Isla del Tesoro",
+        palette: ['#fef3c7', '#fffbeb', '#f0fdfa'],
+        tiles: [
+          { emoji: "🏴‍☠️️", label: "Barco" },
+          { emoji: "🌴", label: "Palmera" },
+          { emoji: "🌊", label: "Mar" },
+          { emoji: "🦜", label: "Loro" },
+          { emoji: "💎", label: "Joyas" },
+          { emoji: "🧭", label: "Brújula" },
+          { emoji: "🏝️", label: "Isla" },
+          { emoji: "🗺️", label: "Mapa" },
+          { emoji: "🪙", label: "Oro" },
+          { emoji: "👑", label: "Corona" },
+          { emoji: "⚔️", label: "Espadas" },
+          { emoji: "🦈", label: "Tiburón" },
+          { emoji: "🏺", label: "Ánfora" },
+          { emoji: "🐚", label: "Caracola" },
+          { emoji: "🦀", label: "Cangrejo" },
+          { emoji: "🥥", label: "Coco" },
+          { emoji: "🗿", label: "Tótem" },
+          { emoji: "🔥", label: "Hoguera" },
+          { emoji: "⚓", label: "Ancla" },
+          { emoji: "📜", label: "Mensaje" },
+          { emoji: "🪙", label: "Doblón" },
+          { emoji: "🔭", label: "Catalejo" },
+          { emoji: "🪸", label: "Coral" },
+          { emoji: "🐡", label: "Pez globo" },
+          { emoji: "🏆", label: "Trofeo" },
+          { emoji: "💰", label: "Cofre" },
+          { emoji: "🐊", label: "Cocodrilo" },
+          { emoji: "🪨", label: "Roca" },
+          { emoji: "🌋", label: "Volcán" },
+          { emoji: "🦑", label: "Calamar" },
+          { emoji: "🚢", label: "Galeón" },
+          { emoji: "🗝️", label: "Llave" },
+          { emoji: "🪙", label: "Monedas" },
+          { emoji: "🛶", label: "Canoa" },
+          { emoji: "🐋", label: "Ballena" },
+          { emoji: "✨", label: "Destello" }
+        ]
+      },
+      custom: {
+        name: "Creador Libre",
+        palette: ['#ffffff', '#f8fafc', '#f1f5f9'],
+        tiles: []
+      }
+    };
+
+    // Misiones progresivas para el modo Desafíos
+    const MISSIONS = [
+      {
+        level: 1,
+        title: "¡Primer Vuelo!",
+        description: "Avanza hacia el norte para visitar la Escuela 🏫.",
+        gridSize: 4,
+        mat: 'city',
+        start: { x: 1, y: 3, dir: 0 }, // 0: N, 1: E, 2: S, 3: W
+        target: { x: 1, y: 1 },
+        obstacles: [],
+        optimalSteps: 2
+      },
+      {
+        level: 2,
+        title: "Girando la Esquina",
+        description: "Llega hasta la Fuente ⛲ girando hacia la derecha.",
+        gridSize: 4,
+        mat: 'city',
+        start: { x: 0, y: 3, dir: 0 },
+        target: { x: 2, y: 2 },
+        obstacles: [{ x: 0, y: 2 }],
+        optimalSteps: 4
+      },
+      {
+        level: 3,
+        title: "La Cosecha de Fresas",
+        description: "Lleva a Bee-Bot a las deliciosas Fresas 🍓.",
+        gridSize: 5,
+        mat: 'city',
+        start: { x: 0, y: 4, dir: 1 },
+        target: { x: 3, y: 1 },
+        obstacles: [{ x: 1, y: 3 }, { x: 2, y: 3 }],
+        optimalSteps: 7
+      },
+      {
+        level: 4,
+        title: "Buscando la Letra E",
+        description: "Encuentra al Elefante en la letra 🇪.",
+        gridSize: 5,
+        mat: 'alphabet',
+        start: { x: 2, y: 4, dir: 0 },
+        target: { x: 4, y: 0 },
+        obstacles: [{ x: 2, y: 2 }, { x: 3, y: 2 }],
+        optimalSteps: 6
+      },
+      {
+        level: 5,
+        title: "El Cofre del Tesoro",
+        description: "¡Esquiva al Tiburón 🦈 y llega al Cofre 💰!",
+        gridSize: 5,
+        mat: 'treasure',
+        start: { x: 0, y: 4, dir: 0 },
+        target: { x: 4, y: 1 },
+        obstacles: [{ x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 }],
+        optimalSteps: 9
+      },
+      {
+        level: 6,
+        title: "Misión Estrella Dorada",
+        description: "Llega a la Estrella ⭐ esquivando las trampas.",
+        gridSize: 6,
+        mat: 'math',
+        start: { x: 1, y: 5, dir: 0 },
+        target: { x: 4, y: 2 },
+        obstacles: [{ x: 1, y: 3 }, { x: 3, y: 3 }, { x: 4, y: 3 }],
+        optimalSteps: 8
+      }
+    ];
+
+    const DIRECTIONS = [
+      { name: 'N', angle: 0,   dx: 0,  dy: -1 }, // Arriba (Norte)
+      { name: 'E', angle: 90,  dx: 1,  dy: 0 },  // Derecha (Este)
+      { name: 'S', angle: 180, dx: 0,  dy: 1 },  // Abajo (Sur)
+      { name: 'W', angle: 270, dx: -1, dy: 0 }   // Izquierda (Oeste)
+    ];
+
+    const state = {
+      mode: 'free',            // 'free' o 'missions'
+      currentMissionIndex: 0,
+      gridSize: 5,             // 4, 5, 6
+      currentMatKey: 'city',
+      customTiles: {},         // Almacena celdas personalizadas en creador
+      
+      // Estado de Bee-Bot
+      bot: {
+        x: 0,
+        y: 4,
+        dirIndex: 0,           // 0: Norte, 1: Este, etc.
+        startX: 0,
+        startY: 4,
+        startDirIndex: 0
+      },
+
+      programQueue: [],        // array de strings: 'F', 'B', 'L', 'R', 'P'
+      isRunning: false,
+      currentStepIndex: -1,
+      stepDelay: 500,          // ms entre instrucciones
+      
+      // Opciones visuales
+      showTrail: true,
+      trailPoints: [],         // historial de {x, y}
+      customObstacles: [],
+      targetTile: null
+    };
+
+    const gridBoard = document.getElementById('gridBoard');
+    const beebotEl = document.getElementById('beebot');
+    const trailSvg = document.getElementById('trailSvg');
+    const commandQueueEl = document.getElementById('commandQueue');
+    const emptyQueueMsg = document.getElementById('emptyQueueMsg');
+    const cmdCountEl = document.getElementById('cmdCount');
+    const statusMessage = document.getElementById('statusMessage');
+    const statusIcon = document.getElementById('statusIcon');
+    const posIndicator = document.getElementById('posIndicator');
+    const matSelect = document.getElementById('matSelect');
+    const toggleTrailBtn = document.getElementById('toggleTrailBtn');
+    const trailStatus = document.getElementById('trailStatus');
+    const trailIcon = document.getElementById('trailIcon');
+    const missionBanner = document.getElementById('missionBanner');
+    const missionLevelTag = document.getElementById('missionLevelTag');
+    const missionGoalText = document.getElementById('missionGoalText');
+    const missionStars = document.getElementById('missionStars');
+    const victoryModal = document.getElementById('victoryModal');
+    const victoryDetails = document.getElementById('victoryDetails');
+    const modalNextBtn = document.getElementById('modalNextBtn');
+    const modalRepeatBtn = document.getElementById('modalRepeatBtn');
+
+    function renderGrid() {
+      gridBoard.innerHTML = '';
+      gridBoard.style.gridTemplateColumns = `repeat(${state.gridSize}, minmax(0, 1fr))`;
+      gridBoard.style.gridTemplateRows = `repeat(${state.gridSize}, minmax(0, 1fr))`;
+
+      const theme = MAT_THEMES[state.currentMatKey] || MAT_THEMES.city;
+
+      for (let y = 0; y < state.gridSize; y++) {
+        for (let x = 0; x < state.gridSize; x++) {
+          const tile = document.createElement('div');
+          tile.className = 'mat-tile rounded-xl bg-white border border-amber-200 shadow-xs flex flex-col items-center justify-center relative cursor-pointer hover:border-amber-400 p-1 text-center select-none overflow-hidden';
+          tile.dataset.x = x;
+          tile.dataset.y = y;
+
+          // Obtener datos temáticos o personalizados
+          let tileData = null;
+          const key = `${x},${y}`;
+
+          if (state.currentMatKey === 'custom') {
+            tileData = state.customTiles[key] || { emoji: "🌱", label: "" };
+          } else {
+            const index = (y * state.gridSize + x) % theme.tiles.length;
+            tileData = theme.tiles[index];
+          }
+
+          // Verificar si es obstáculo de misión o meta
+          const isObstacle = checkIsObstacle(x, y);
+          const isTarget = state.targetTile && state.targetTile.x === x && state.targetTile.y === y;
+
+          if (isTarget) {
+            tile.classList.add('bg-amber-100', 'ring-4', 'ring-amber-400', 'ring-inset');
+            tile.innerHTML = `
+              <div class="text-2xl sm:text-3xl animate-bounce">${tileData ? tileData.emoji : '🎯'}</div>
+              <span class="text-[9px] sm:text-[11px] font-black text-amber-900 bg-amber-300 px-1.5 rounded-full mt-0.5 shadow-xs">¡META!</span>
+            `;
+          } else if (isObstacle) {
+            tile.classList.add('bg-rose-50', 'border-rose-300');
+            tile.innerHTML = `
+              <div class="text-2xl sm:text-3xl">🪨</div>
+              <span class="text-[9px] sm:text-[10px] font-bold text-rose-700 bg-rose-100 px-1 rounded-sm mt-0.5">Roca</span>
+            `;
+          } else {
+            // Fondo aleatorio suave de la paleta
+            const col = theme.palette[(x + y) % theme.palette.length];
+            tile.style.backgroundColor = col;
+
+            tile.innerHTML = `
+              <div class="text-xl sm:text-2xl">${tileData.emoji}</div>
+              <span class="text-[9px] sm:text-[10px] font-bold text-slate-700 leading-tight truncate max-w-full px-1">${tileData.label}</span>
+            `;
+          }
+
+          // Clic en modo creador o para colocar meta/obstáculo libre
+          tile.addEventListener('click', () => handleTileClick(x, y));
+
+          gridBoard.appendChild(tile);
+        }
+      }
+
+      updateBeeBotElementPosition(false);
+      drawTrail();
+    }
+
+    function checkIsObstacle(x, y) {
+      if (state.mode === 'missions') {
+        const mission = MISSIONS[state.currentMissionIndex];
+        return mission.obstacles.some(ob => ob.x === x && ob.y === y);
+      }
+      return state.customObstacles.some(ob => ob.x === x && ob.y === y);
+    }
+
+    function handleTileClick(x, y) {
+      if (state.isRunning) return;
+
+      if (state.currentMatKey === 'custom') {
+        const emojis = ["🌸", "🍯", "🪨", "🏡", "⭐", "🌳", "🍎", "🌱"];
+        const key = `${x},${y}`;
+        const current = state.customTiles[key] ? state.customTiles[key].emoji : "🌱";
+        const nextIdx = (emojis.indexOf(current) + 1) % emojis.length;
+        state.customTiles[key] = { emoji: emojis[nextIdx], label: "" };
+        sound.playKeyBeep(520);
+        renderGrid();
+      } else if (state.mode === 'free') {
+        // En modo libre, hacer clic permite cambiar la posición inicial de Bee-Bot
+        state.bot.x = x;
+        state.bot.y = y;
+        state.bot.startX = x;
+        state.bot.startY = y;
+        state.trailPoints = [{ x, y }];
+        sound.playKeyBeep(480);
+        updateBeeBotElementPosition(true);
+        drawTrail();
+        setStatus("Bee-Bot colocado en la casilla elegida.", "📍");
+      }
+    }
+
+    function updateBeeBotElementPosition(animate = true) {
+      const tile = gridBoard.querySelector(`[data-x="${state.bot.x}"][data-y="${state.bot.y}"]`);
+      if (!tile) return;
+
+      const boardRect = gridBoard.getBoundingClientRect();
+      const tileRect = tile.getBoundingClientRect();
+
+      const left = tileRect.left - boardRect.left + (tileRect.width - beebotEl.offsetWidth) / 2;
+      const top = tileRect.top - boardRect.top + (tileRect.height - beebotEl.offsetHeight) / 2;
+
+      const angle = DIRECTIONS[state.bot.dirIndex].angle;
+
+      if (!animate) {
+        beebotEl.style.transition = 'none';
+      } else {
+        beebotEl.style.transition = 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      }
+
+      beebotEl.style.transform = `translate(${left}px, ${top}px) rotate(${angle}deg)`;
+
+      // Ajustar tamaño del robot proporcional a la celda
+      const idealSize = Math.max(46, Math.min(tileRect.width * 0.88, 80));
+      beebotEl.style.width = `${idealSize}px`;
+      beebotEl.style.height = `${idealSize}px`;
+
+      // Actualizar etiqueta de coordenadas y dirección
+      const dirName = DIRECTIONS[state.bot.dirIndex].name;
+      posIndicator.innerText = `X:${state.bot.x}, Y:${state.bot.y} [${dirName}]`;
+    }
+
+    window.addEventListener('resize', () => {
+      updateBeeBotElementPosition(false);
+      drawTrail();
+    });
+
+    function drawTrail() {
+      if (!state.showTrail || state.trailPoints.length < 1) {
+        trailSvg.innerHTML = '';
+        return;
+      }
+
+      const boardRect = gridBoard.getBoundingClientRect();
+      let pathD = '';
+      let circlesHtml = '';
+
+      state.trailPoints.forEach((pt, index) => {
+        const tile = gridBoard.querySelector(`[data-x="${pt.x}"][data-y="${pt.y}"]`);
+        if (!tile) return;
+        const rect = tile.getBoundingClientRect();
+        const cx = rect.left - boardRect.left + rect.width / 2;
+        const cy = rect.top - boardRect.top + rect.height / 2;
+
+        if (index === 0) {
+          pathD += `M ${cx} ${cy}`;
+        } else {
+          pathD += ` L ${cx} ${cy}`;
+        }
+
+        circlesHtml += `
+          <circle cx="${cx}" cy="${cy}" r="4" fill="#f59e0b" class="trail-dot" />
+        `;
+      });
+
+      trailSvg.innerHTML = `
+        <path d="${pathD}" fill="none" stroke="#fbbf24" stroke-width="4.5" stroke-dasharray="6,6" stroke-linecap="round" opacity="0.8" />
+        ${circlesHtml}
+      `;
+    }
+
+    function addCommand(cmd) {
+      if (state.isRunning) return;
+      if (state.programQueue.length >= 40) {
+        setStatus("¡Memoria llena! Máximo 40 comandos.", "⚠️");
+        sound.playBumpSound();
+        return;
+      }
+
+      state.programQueue.push(cmd);
+      sound.playKeyBeep(cmd === 'F' ? 660 : (cmd === 'B' ? 520 : (cmd === 'L' ? 587 : 740)));
+      renderCommandQueue();
+      setStatus(`Paso añadido: ${getCommandName(cmd)}. Llevas ${state.programQueue.length} pasos.`, "➕");
+    }
+
+    function getCommandName(cmd) {
+      switch(cmd) {
+        case 'F': return "Avanzar ⬆️";
+        case 'B': return "Retroceder ⬇️";
+        case 'L': return "Giro Izquierda 🔄";
+        case 'R': return "Giro Derecha 🔁";
+        case 'P': return "Pausa ⏸️";
+        default: return cmd;
+      }
+    }
+
+    function renderCommandQueue() {
+      cmdCountEl.innerText = state.programQueue.length;
+
+      if (state.programQueue.length === 0) {
+        commandQueueEl.innerHTML = `
+          <div id="emptyQueueMsg" class="text-xs text-slate-400 italic w-full text-center py-4">
+            Pulsa los botones para armar la secuencia de movimientos...
+          </div>
+        `;
+        return;
+      }
+
+      commandQueueEl.innerHTML = '';
+      state.programQueue.forEach((cmd, idx) => {
+        const badge = document.createElement('div');
+        const isActive = idx === state.currentStepIndex;
+
+        let icon = '';
+        let colorClass = '';
+
+        if (cmd === 'F') { icon = 'fa-arrow-up'; colorClass = 'bg-blue-100 text-blue-700 border-blue-300'; }
+        else if (cmd === 'B') { icon = 'fa-arrow-down'; colorClass = 'bg-blue-100 text-blue-700 border-blue-300'; }
+        else if (cmd === 'L') { icon = 'fa-rotate-left'; colorClass = 'bg-orange-100 text-orange-700 border-orange-300'; }
+        else if (cmd === 'R') { icon = 'fa-rotate-right'; colorClass = 'bg-orange-100 text-orange-700 border-orange-300'; }
+        else if (cmd === 'P') { icon = 'fa-pause'; colorClass = 'bg-sky-100 text-sky-700 border-sky-300'; }
+
+        badge.className = `px-2 py-1 rounded-xl border text-xs font-bold flex items-center gap-1 shadow-2xs transition-all ${colorClass} ${isActive ? 'ring-2 ring-emerald-500 scale-110 bg-emerald-100' : ''}`;
+        badge.innerHTML = `
+          <span class="text-[9px] opacity-60">#${idx + 1}</span>
+          <i class="fa-solid ${icon}"></i>
+        `;
+        commandQueueEl.appendChild(badge);
+      });
+
+      // Auto scroll al final de la lista
+      commandQueueEl.scrollTop = commandQueueEl.scrollHeight;
+    }
+
+    function clearProgram() {
+      if (state.isRunning) return;
+      state.programQueue = [];
+      state.currentStepIndex = -1;
+      sound.playClearSound();
+      renderCommandQueue();
+      setStatus("Memoria borrada. ¡Lista para un nuevo viaje!", "🗑️");
+    }
+
+    function undoLastCommand() {
+      if (state.isRunning || state.programQueue.length === 0) return;
+      state.programQueue.pop();
+      sound.playKeyBeep(350);
+      renderCommandQueue();
+      setStatus("Último paso deshecho.", "↩️");
+    }
+
+    async function executeProgram() {
+      if (state.isRunning) return;
+      if (state.programQueue.length === 0) {
+        setStatus("¡No hay comandos en memoria! Añade flechas primero.", "⚠️");
+        sound.playBumpSound();
+        return;
+      }
+
+      sound.init();
+      state.isRunning = true;
+      setStatus("¡Bee-Bot en marcha! Ejecutando programa...", "🚀");
+
+      // Iluminar ojos del robot
+      const eyeL = document.getElementById('botEyeLeft');
+      const eyeR = document.getElementById('botEyeRight');
+      eyeL.setAttribute('fill', '#38bdf8');
+      eyeR.setAttribute('fill', '#38bdf8');
+
+      for (let i = 0; i < state.programQueue.length; i++) {
+        if (!state.isRunning) break;
+
+        state.currentStepIndex = i;
+        renderCommandQueue();
+
+        const cmd = state.programQueue[i];
+        const success = await executeSingleStep(cmd);
+
+        if (!success) {
+          // Si hubo choque con obstáculo o pared
+          sound.playBumpSound();
+          setStatus("¡Bee-Bot chocó o intentó salirse del tapete!", "💥");
+          shakeBot();
+          break;
+        }
+
+        // Pequeño descanso entre pasos
+        await sleep(state.stepDelay);
+      }
+
+      // Finalización de la ejecución
+      state.isRunning = false;
+      state.currentStepIndex = -1;
+      renderCommandQueue();
+
+      eyeL.setAttribute('fill', '#0284c7');
+      eyeR.setAttribute('fill', '#0284c7');
+
+      checkMissionCompletion();
+    }
+
+    function executeSingleStep(cmd) {
+      return new Promise((resolve) => {
+        if (cmd === 'F' || cmd === 'B') {
+          const dir = DIRECTIONS[state.bot.dirIndex];
+          const mult = cmd === 'F' ? 1 : -1;
+          const targetX = state.bot.x + dir.dx * mult;
+          const targetY = state.bot.y + dir.dy * mult;
+
+          // Comprobar límites del tapete
+          if (targetX < 0 || targetX >= state.gridSize || targetY < 0 || targetY >= state.gridSize) {
+            resolve(false);
+            return;
+          }
+
+          // Comprobar colisión con obstáculos
+          if (checkIsObstacle(targetX, targetY)) {
+            resolve(false);
+            return;
+          }
+
+          // Movimiento válido
+          state.bot.x = targetX;
+          state.bot.y = targetY;
+          state.trailPoints.push({ x: targetX, y: targetY });
+
+          sound.playStepSound();
+          updateBeeBotElementPosition(true);
+          drawTrail();
+          resolve(true);
+
+        } else if (cmd === 'L') {
+          // Girar 90° izquierda (-1 en array circular de 4)
+          state.bot.dirIndex = (state.bot.dirIndex + 3) % 4;
+          sound.playTurnSound();
+          updateBeeBotElementPosition(true);
+          resolve(true);
+
+        } else if (cmd === 'R') {
+          // Girar 90° derecha (+1)
+          state.bot.dirIndex = (state.bot.dirIndex + 1) % 4;
+          sound.playTurnSound();
+          updateBeeBotElementPosition(true);
+          resolve(true);
+
+        } else if (cmd === 'P') {
+          // Pausa de 1 segundo
+          sound.playKeyBeep(300);
+          setTimeout(() => resolve(true), 1000);
+        }
+      });
+    }
+
+    function shakeBot() {
+      beebotEl.classList.add('animate-bounce');
+      setTimeout(() => beebotEl.classList.remove('animate-bounce'), 800);
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function checkMissionCompletion() {
+      if (state.mode !== 'missions') {
+        setStatus("Secuencia completada. Puedes seguir programando o reiniciar.", "🏁");
+        return;
+      }
+
+      const mission = MISSIONS[state.currentMissionIndex];
+      const reachedTarget = state.bot.x === mission.target.x && state.bot.y === mission.target.y;
+
+      if (reachedTarget) {
+        sound.playVictory();
+        const stepsUsed = state.programQueue.length;
+        let stars = 3;
+        if (stepsUsed > mission.optimalSteps + 3) stars = 1;
+        else if (stepsUsed > mission.optimalSteps) stars = 2;
+
+        victoryDetails.innerHTML = `
+          ¡Excelente! Llegaste a la meta usando <strong>${stepsUsed}</strong> comandos.<br>
+          (El camino óptimo era de ${mission.optimalSteps} pasos).
+        `;
+
+        modalStars.innerHTML = `
+          <i class="fa-solid fa-star ${stars >= 1 ? 'text-yellow-400' : 'text-slate-300'}"></i>
+          <i class="fa-solid fa-star ${stars >= 2 ? 'text-yellow-400' : 'text-slate-300'}"></i>
+          <i class="fa-solid fa-star ${stars >= 3 ? 'text-yellow-400' : 'text-slate-300'}"></i>
+        `;
+
+        victoryModal.classList.remove('hidden');
+        victoryModal.classList.add('flex');
+      } else {
+        setStatus("No has llegado a la meta aún. ¡Revisa los pasos y vuelve a intentar!", "🤔");
+      }
+    }
+
+    function loadMission(idx) {
+      state.currentMissionIndex = idx;
+      const m = MISSIONS[idx];
+      state.gridSize = m.gridSize;
+      state.currentMatKey = m.mat;
+      matSelect.value = m.mat;
+
+      // Sincronizar botones de tamaño
+      document.querySelectorAll('.grid-size-btn').forEach(btn => {
+        const sz = parseInt(btn.dataset.grid);
+        if (sz === m.gridSize) {
+          btn.classList.add('bg-amber-500', 'text-white');
+          btn.classList.remove('text-amber-900');
+        } else {
+          btn.classList.remove('bg-amber-500', 'text-white');
+          btn.classList.add('text-amber-900');
+        }
+      });
+
+      state.bot.x = m.start.x;
+      state.bot.y = m.start.y;
+      state.bot.startX = m.start.x;
+      state.bot.startY = m.start.y;
+      state.bot.dirIndex = m.start.dir;
+      state.bot.startDirIndex = m.start.dir;
+
+      state.targetTile = m.target;
+      state.programQueue = [];
+      state.trailPoints = [{ x: m.start.x, y: m.start.y }];
+
+      missionLevelTag.innerText = `Misión ${m.level} de ${MISSIONS.length}: ${m.title}`;
+      missionGoalText.innerText = m.description;
+      missionBanner.classList.remove('hidden');
+
+      renderCommandQueue();
+      renderGrid();
+      setStatus(`Misión ${m.level}: ${m.description}`, "🎯");
+    }
+
+    function resetBotToOrigin() {
+      if (state.isRunning) return;
+      state.bot.x = state.bot.startX;
+      state.bot.y = state.bot.startY;
+      state.bot.dirIndex = state.bot.startDirIndex;
+      state.trailPoints = [{ x: state.bot.x, y: state.bot.y }];
+      sound.playKeyBeep(440);
+      updateBeeBotElementPosition(true);
+      drawTrail();
+      setStatus("Bee-Bot ha vuelto a su casilla de salida.", "🏠");
+    }
+
+    function setStatus(msg, icon = "👉") {
+      statusMessage.innerText = msg;
+      statusIcon.innerText = icon;
+    }
+
+    // Botones físicos de Bee-Bot
+    document.getElementById('cmdForward').addEventListener('click', () => addCommand('F'));
+    document.getElementById('cmdBackward').addEventListener('click', () => addCommand('B'));
+    document.getElementById('cmdLeft').addEventListener('click', () => addCommand('L'));
+    document.getElementById('cmdRight').addEventListener('click', () => addCommand('R'));
+    document.getElementById('cmdPause').addEventListener('click', () => addCommand('P'));
+    document.getElementById('cmdGo').addEventListener('click', () => executeProgram());
+    document.getElementById('cmdClear').addEventListener('click', () => clearProgram());
+
+    document.getElementById('btnUndo').addEventListener('click', () => undoLastCommand());
+    document.getElementById('btnStop').addEventListener('click', () => {
+      state.isRunning = false;
+      setStatus("Ejecución detenida.", "⏹️");
+    });
+
+    document.getElementById('resetBotPosBtn').addEventListener('click', () => resetBotToOrigin());
+
+    // Activar / desactivar rastro
+    toggleTrailBtn.addEventListener('click', () => {
+      state.showTrail = !state.showTrail;
+      trailStatus.innerText = state.showTrail ? 'ON' : 'OFF';
+      trailIcon.className = state.showTrail ? 'fa-solid fa-route text-amber-600' : 'fa-solid fa-route text-slate-400';
+      drawTrail();
+    });
+
+    // Cambiar selector de tapete
+    matSelect.addEventListener('change', (e) => {
+      state.currentMatKey = e.target.value;
+      if (state.mode === 'missions') {
+        setMode('free');
+      }
+      renderGrid();
+      setStatus(`Tapete cambiado a: ${MAT_THEMES[state.currentMatKey].name}`, "🗺️");
+    });
+
+    // Selector de tamaño de tapete
+    document.querySelectorAll('.grid-size-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (state.isRunning) return;
+        const size = parseInt(e.currentTarget.dataset.grid);
+        state.gridSize = size;
+        
+        document.querySelectorAll('.grid-size-btn').forEach(b => {
+          b.classList.remove('bg-amber-500', 'text-white');
+          b.classList.add('text-amber-900');
+        });
+        e.currentTarget.classList.add('bg-amber-500', 'text-white');
+        e.currentTarget.classList.remove('text-amber-900');
+
+        // Ajustar posición del bot si quedó fuera
+        state.bot.x = Math.min(state.bot.x, size - 1);
+        state.bot.y = Math.min(state.bot.y, size - 1);
+        state.bot.startX = state.bot.x;
+        state.bot.startY = state.bot.y;
+        state.trailPoints = [{ x: state.bot.x, y: state.bot.y }];
+
+        renderGrid();
+      });
+    });
+
+    // Selector de velocidad
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.speed-btn').forEach(b => {
+          b.classList.remove('bg-amber-600', 'text-white');
+          b.classList.add('text-amber-900');
+        });
+        e.currentTarget.classList.add('bg-amber-600', 'text-white');
+        e.currentTarget.classList.remove('text-amber-900');
+        state.stepDelay = parseInt(e.currentTarget.dataset.speed);
+      });
+    });
+
+    // Cambio de Modo (Libre vs Misiones)
+    function setMode(mode) {
+      state.mode = mode;
+      const freeBtn = document.getElementById('modeFreeBtn');
+      const missBtn = document.getElementById('modeMissionsBtn');
+
+      if (mode === 'free') {
+        freeBtn.classList.add('bg-amber-500', 'text-white');
+        freeBtn.classList.remove('text-amber-900');
+        missBtn.classList.remove('bg-amber-500', 'text-white');
+        missBtn.classList.add('text-amber-900');
+
+        missionBanner.classList.add('hidden');
+        state.targetTile = null;
+        renderGrid();
+        setStatus("Modo Libre activado. ¡Explora a tu ritmo!", "🐝");
+      } else {
+        missBtn.classList.add('bg-amber-500', 'text-white');
+        missBtn.classList.remove('text-amber-900');
+        freeBtn.classList.remove('bg-amber-500', 'text-white');
+        freeBtn.classList.add('text-amber-900');
+
+        loadMission(state.currentMissionIndex);
+      }
+    }
+
+    document.getElementById('modeFreeBtn').addEventListener('click', () => setMode('free'));
+    document.getElementById('modeMissionsBtn').addEventListener('click', () => setMode('missions'));
+
+    // Sonido On / Off
+    document.getElementById('btnSoundToggle').addEventListener('click', () => {
+      sound.enabled = !sound.enabled;
+      const icon = document.getElementById('soundIcon');
+      if (sound.enabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        sound.init();
+        sound.playKeyBeep(600);
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark text-rose-600';
+      }
+    });
+
+    // Botones del Modal de Victoria
+    modalRepeatBtn.addEventListener('click', () => {
+      victoryModal.classList.add('hidden');
+      victoryModal.classList.remove('flex');
+      resetBotToOrigin();
+    });
+
+    modalNextBtn.addEventListener('click', () => {
+      victoryModal.classList.add('hidden');
+      victoryModal.classList.remove('flex');
+      if (state.currentMissionIndex + 1 < MISSIONS.length) {
+        loadMission(state.currentMissionIndex + 1);
+      } else {
+        loadMission(0); // Reiniciar a nivel 1
+        setStatus("¡Has completado todas las misiones! Eres un maestro Bee-Bot.", "👑");
+      }
+    });
+
+    // Control físico con teclado (ideal para pizarras digitales y ordenadores de aula)
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+      switch(e.key) {
+        case 'ArrowUp':
+          e.preventDefault();
+          highlightButton('cmdForward');
+          addCommand('F');
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          highlightButton('cmdBackward');
+          addCommand('B');
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          highlightButton('cmdLeft');
+          addCommand('L');
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          highlightButton('cmdRight');
+          addCommand('R');
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          highlightButton('cmdGo');
+          executeProgram();
+          break;
+        case 'c':
+        case 'C':
+        case 'Delete':
+        case 'Backspace':
+          highlightButton('cmdClear');
+          clearProgram();
+          break;
+      }
+    });
+
+    function highlightButton(id) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.classList.add('pressed');
+      setTimeout(() => btn.classList.remove('pressed'), 120);
+    }
+
+    window.addEventListener('load', () => {
+      // Estado de partida: Bee-Bot en (0, 4) mirando al norte
+      state.bot.x = 0;
+      state.bot.y = 4;
+      state.bot.startX = 0;
+      state.bot.startY = 4;
+      state.bot.dirIndex = 0;
+      state.trailPoints = [{ x: 0, y: 4 }];
+
+      renderGrid();
+      renderCommandQueue();
+      setStatus("¡Bienvenido a Bee-Bot! Pulsa las flechas para programar.", "🐝");
+    });
+  </script>
+</body>
+</html>
