@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jueves de Cañas & Mamaómetro 🍻</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            beer: {
+              300: '#FDE047',
+              400: '#FACC15',
+              500: '#EAB308',
+              600: '#CA8A04',
+              700: '#A16207',
+            },
+            wine: {
+              700: '#881337',
+              800: '#640d27',
+              900: '#4c0519',
+            }
+          },
+          animation: {
+            'bounce-short': 'bounce 0.4s ease-in-out 1',
+            'pulse-fast': 'pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar and smooth UI feel */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 9999px;
+    }
+    .tap-effect:active {
+      transform: scale(0.94);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-28 selection:bg-amber-500 selection:text-black">
+
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-2xl shadow-md shadow-amber-500/20">
+          🍻
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent">
+            Jueves de Cañas
+          </h1>
+          <p class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            Liga de Bar &middot; <span id="currentLiveClock">--:--:--</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Group Totals Banner -->
+      <div class="flex items-center gap-2 text-xs">
+        <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 text-slate-300 flex items-center gap-1.5">
+          <span>🍺</span>
+          <span class="font-bold text-amber-400 text-sm" id="globalTotalAlcoholDrinks">0</span>
+          <span>con alcohol</span>
+        </div>
+        <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 text-slate-300 flex items-center gap-1.5">
+          <span>💧</span>
+          <span class="font-bold text-cyan-400 text-sm" id="globalTotalSoftDrinks">0</span>
+          <span>sin</span>
+        </div>
+        <button onclick="openResetModal()" class="px-2.5 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-semibold border border-rose-800/60 transition" title="Reiniciar noche">
+          🔄 Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-5 space-y-6">
+
+    <!-- Top Action Row: Add friend & Filter views -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+      <div class="flex items-center gap-2">
+        <button onclick="openAddMemberModal()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-bold text-sm shadow-md flex items-center justify-center gap-2 transition tap-effect">
+          <span class="text-base">➕</span> Nuevo Amigo / Llega Alguien
+        </button>
+        <span class="text-xs text-slate-400 hidden sm:inline" id="participantsCountText">0 participantes</span>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700/70 text-xs font-semibold">
+        <button id="tabBtnCards" onclick="switchMainTab('cards')" class="px-3.5 py-1.5 rounded-lg transition bg-amber-500 text-slate-950 shadow">
+          🍺 Tarjetas & Pedidos
+        </button>
+        <button id="tabBtnPodium" onclick="switchMainTab('podium')" class="px-3.5 py-1.5 rounded-lg transition text-slate-300 hover:text-white">
+          🏆 Competición & Podio
+        </button>
+        <button id="tabBtnCatalog" onclick="switchMainTab('catalog')" class="px-3.5 py-1.5 rounded-lg transition text-slate-300 hover:text-white">
+          📖 Graduaciones
+        </button>
+      </div>
+    </div>
+
+    <section id="viewCards" class="space-y-4">
+      <div id="noParticipantsMsg" class="hidden text-center py-16 px-4 bg-slate-900/40 rounded-3xl border border-dashed border-slate-800">
+        <div class="text-6xl mb-3">🍺</div>
+        <h3 class="text-lg font-bold text-slate-200">Todavía no ha llegado nadie al bar</h3>
+        <p class="text-sm text-slate-400 max-w-sm mx-auto mt-1 mb-4">Pulsa en "Nuevo Amigo / Llega Alguien" cuando lleguen José, Silvia, Belén o Chema para activar su reloj personal.</p>
+        <button onclick="openAddMemberModal()" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-sm shadow tap-effect">
+          Añadir al primer colega
+        </button>
+      </div>
+
+      <!-- Grid of Participant Cards -->
+      <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Rendered by JavaScript -->
+      </div>
+    </section>
+
+    <section id="viewPodium" class="hidden space-y-6">
+      <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div>
+            <h2 class="text-xl font-black text-amber-400 flex items-center gap-2">
+              🏆 Clasificación General del Jueves
+            </h2>
+            <p class="text-xs text-slate-400">Ordenado en tiempo real según el nivel estimado de "Mamao" (alcohol residual en sangre metabolizado por minutos).</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-400">Ordenar por:</span>
+            <select id="leaderboardOrder" onchange="renderLeaderboard()" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500">
+              <option value="drunk">Nivel de Mamao (g/L)</option>
+              <option value="totalAlcohol">Total Bebidas con Alcohol</option>
+              <option value="softDrinks">Campeón Hidratación (Sin)</option>
+              <option value="time">Tiempo en el Bar</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Top 3 Podium Cards -->
+        <div id="podiumTop3" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Leaderboard Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="text-xs uppercase bg-slate-800/60 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-3">#</th>
+                <th class="py-3 px-3">Amigo</th>
+                <th class="py-3 px-3">Llegada / Tiempo</th>
+                <th class="py-3 px-3 text-center">Bebidas</th>
+                <th class="py-3 px-3 text-center">Tasa Actual Est.</th>
+                <th class="py-3 px-3">Estado de Pedal</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardTbody" class="divide-y divide-slate-800/60">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="viewCatalog" class="hidden space-y-4">
+      <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 md:p-6">
+        <h2 class="text-lg font-bold text-amber-400 mb-1 flex items-center gap-2">
+          📖 Bebidas de la Carta & Cálculo de Alcohol
+        </h2>
+        <p class="text-xs text-slate-400 mb-5">
+          Fórmula de metabolización científica basada en Widmark simplificado: Gramos de alcohol ingeridos = Mililitros × Graduación × 0.8 / 100. La metabolización natural del hígado resta aproximadamente ~0.15 g/L por cada hora transcurrida desde el consumo y la llegada.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="catalogDrinksList">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="modalAddFriend" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <span>👋</span> ¿Quién acaba de llegar al bar?
+        </h3>
+        <button onclick="closeAddMemberModal()" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre del colega:</label>
+          <input type="text" id="inputFriendName" placeholder="Ej: José, Silvia, Belén, Chema..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Hora de llegada:</label>
+            <input type="time" id="inputFriendTime" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <span class="text-[11px] text-slate-400">Por defecto: ¡Ahora mismo!</span>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Peso aprox (kg):</label>
+            <input type="number" id="inputFriendWeight" value="70" min="40" max="150" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <span class="text-[11px] text-slate-400">Para afinar el mamaómetro</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Avatar / Emoji favorito:</label>
+          <div class="flex gap-2 justify-between" id="avatarSelector">
+            <button type="button" onclick="selectAvatar('😎')" class="avatar-option p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xl border-2 border-amber-500">😎</button>
+            <button type="button" onclick="selectAvatar('🥳')" class="avatar-option p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xl border-2 border-transparent">🥳</button>
+            <button type="button" onclick="selectAvatar('💃')" class="avatar-option p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xl border-2 border-transparent">💃</button>
+            <button type="button" onclick="selectAvatar('🤠')" class="avatar-option p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xl border-2 border-transparent">🤠</button>
+            <button type="button" onclick="selectAvatar('🍻')" class="avatar-option p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xl border-2 border-transparent">🍻</button>
+            <button type="button" onclick="selectAvatar('👑')" class="avatar-option p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xl border-2 border-transparent">👑</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeAddMemberModal()" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-semibold">Cancelar</button>
+        <button onclick="saveNewFriend()" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md tap-effect">
+          ¡Añadir y empezar a beber!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalQuickDrink" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Añadir consumición a:</span>
+          <h3 id="targetFriendNameTitle" class="text-xl font-extrabold text-amber-400 flex items-center gap-2">Amigo</h3>
+        </div>
+        <button onclick="closeDrinkModal()" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+      </div>
+
+      <!-- Quick Category Sections -->
+      <div class="space-y-4">
+        <!-- Cervezas -->
+        <div>
+          <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🍺</span> Cervezas
+          </h4>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="modalBeerButtons">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Vinos -->
+        <div>
+          <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🍷</span> Vinos
+          </h4>
+          <div class="grid grid-cols-2 gap-2" id="modalWineButtons">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Refrescos / Sin Alcohol -->
+        <div>
+          <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🥤</span> Refrescos y Aguas
+          </h4>
+          <div class="grid grid-cols-3 gap-2" id="modalSoftButtons">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex justify-end">
+        <button onclick="closeDrinkModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    const DRINKS_CATALOG = [
+      // Cervezas
+      { id: 'cana', category: 'beer', name: 'Caña', icon: '🍺', volMl: 200, abv: 5.0, desc: 'Cañita clásica (200ml, 5%)' },
+      { id: 'pinta', category: 'beer', name: 'Pinta', icon: '🍻', volMl: 500, abv: 5.0, desc: 'Pinta bien tirada (500ml, 5%)' },
+      { id: 'jarra', category: 'beer', name: 'Jarra', icon: '🍺', volMl: 650, abv: 5.5, desc: 'Jarra grande helada (650ml, 5.5%)' },
+      { id: 'quinto', category: 'beer', name: 'Botellín Quinto', icon: '🍾', volMl: 200, abv: 5.0, desc: 'Botellín de 20cl (5%)' },
+      { id: 'tercio', category: 'beer', name: 'Botellín Tercio', icon: '🍾', volMl: 330, abv: 5.0, desc: 'Botellín de tercio 33cl (5%)' },
+      // Vinos
+      { id: 'tinto', category: 'wine', name: 'Vino Tinto solo', icon: '🍷', volMl: 150, abv: 13.5, desc: 'Copa de tinto con cuerpo (150ml, 13.5%)' },
+      { id: 'blanco_hielo', category: 'wine', name: 'Vino Blanco c/hielo', icon: '🥂', volMl: 150, abv: 11.5, desc: 'Copa de blanco fresquito (150ml, 11.5%)' },
+      // Sin Alcohol
+      { id: 'cocacola', category: 'soft', name: 'Coca-Cola', icon: '🥤', volMl: 330, abv: 0.0, desc: 'Refresco con cafeína 330ml (0%)' },
+      { id: 'agua_gas', category: 'soft', name: 'Agua con Gas', icon: '🫧', volMl: 330, abv: 0.0, desc: 'Burbujas hidratantes (0%)' },
+      { id: 'botella_agua', category: 'soft', name: 'Botella de Agua', icon: '💧', volMl: 500, abv: 0.0, desc: 'Agua mineral 500ml (0%)' }
+    ];
+
+    /* App State */
+    let participants = [];
+    let selectedAvatar = '😎';
+    let currentModalParticipantId = null;
+
+    /* Web Audio API Sound generator */
+    let audioCtx = null;
+    function playChime(type = 'drink') {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        if (type === 'drink') {
+          // Beer clink cheer sound
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.1); // A5
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'water') {
+          // Bubble sound
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } else if (type === 'undo') {
+          // Low blip
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.15);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        }
+      } catch (e) {
+        // Fallback silently if audio not allowed yet
+      }
+    }
+
+    function loadState() {
+      const stored = localStorage.getItem('jueves_canas_state');
+      if (stored) {
+        try {
+          participants = JSON.parse(stored);
+        } catch (e) {
+          participants = [];
+        }
+      } else {
+        // Default starter squad for Thursday night preview
+        const now = new Date();
+        const h8pm = new Date();
+        h8pm.setHours(20, 0, 0, 0);
+        
+        participants = [
+          {
+            id: 'p_jose',
+            name: 'José',
+            avatar: '😎',
+            weight: 75,
+            startTime: h8pm.getTime(),
+            drinks: { cana: 2, tercio: 1, cocacola: 0 }
+          },
+          {
+            id: 'p_silvia',
+            name: 'Silvia',
+            avatar: '💃',
+            weight: 60,
+            startTime: h8pm.getTime(),
+            drinks: { blanco_hielo: 2, agua_gas: 1 }
+          },
+          {
+            id: 'p_belen',
+            name: 'Belén',
+            avatar: '🥳',
+            weight: 62,
+            startTime: (h8pm.getTime() + 45 * 60000), // arrived 45 mins later
+            drinks: { cana: 1, tinto: 1 }
+          },
+          {
+            id: 'p_chema',
+            name: 'Chema',
+            avatar: '🤠',
+            weight: 82,
+            startTime: (h8pm.getTime() + 75 * 60000), // arrived 1h15m later
+            drinks: { jarra: 1, quinto: 1 }
+          }
+        ];
+        saveState();
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem('jueves_canas_state', JSON.stringify(participants));
+      updateGlobalCounters();
+    }
+
+    // Widmark formulation:
+    // Grams of pure alcohol = ml * (ABV / 100) * 0.8 (density of alcohol)
+    // Elimination rate: ~0.15 g/L of blood alcohol per hour (or ~7-10g pure alcohol eliminated per hour)
+    function calculateParticipantBAC(p) {
+      let totalGramsAlcohol = 0;
+      let totalAlcoholDrinksCount = 0;
+      let totalSoftDrinksCount = 0;
+
+      // Sum all consumed drinks
+      Object.keys(p.drinks || {}).forEach(drinkId => {
+        const count = p.drinks[drinkId] || 0;
+        if (count > 0) {
+          const drink = DRINKS_CATALOG.find(d => d.id === drinkId);
+          if (drink) {
+            if (drink.abv > 0) {
+              const gramsPerDrink = drink.volMl * (drink.abv / 100) * 0.8;
+              totalGramsAlcohol += gramsPerDrink * count;
+              totalAlcoholDrinksCount += count;
+            } else {
+              totalSoftDrinksCount += count;
+            }
+          }
+        }
+      });
+
+      // Time elapsed since arrival in hours
+      const now = Date.now();
+      const elapsedMs = Math.max(0, now - p.startTime);
+      const elapsedHours = elapsedMs / (1000 * 60 * 60);
+
+      // Widmark's formula: Peak BAC (g/L) approx = Alcohol in grams / (weight * r)
+      // average r = 0.68
+      const weight = p.weight || 70;
+      const rFactor = 0.68;
+      const theoreticalPeakBAC = totalGramsAlcohol / (weight * rFactor);
+
+      // Metabolism rate: roughly 0.15 g/L per hour eliminated
+      const metabolismPerHour = 0.15;
+      const eliminatedBAC = elapsedHours * metabolismPerHour;
+
+      const currentBAC = Math.max(0, theoreticalPeakBAC - eliminatedBAC);
+
+      // Determine "Nivel de Mamao" stage and label
+      let status = {
+        level: 'Sereno / Fresco',
+        badgeClass: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+        progressBarClass: 'bg-emerald-500',
+        quote: 'Listo para conducir o pedir la primera ronda 🚗',
+        icon: '😇'
+      };
+
+      if (currentBAC >= 1.6) {
+        status = {
+          level: 'Mamao Legendario / Abrazafarolas',
+          badgeClass: 'bg-rose-600/30 text-rose-300 border-rose-500 animate-pulse',
+          progressBarClass: 'bg-gradient-to-r from-red-600 to-rose-400',
+          quote: '¡Pide un taxi urgente y pide agua! 🚨',
+          icon: '💀'
+        };
+      } else if (currentBAC >= 1.0) {
+        status = {
+          level: 'Bastante Mamao / Peligro Karaoke',
+          badgeClass: 'bg-orange-500/20 text-orange-300 border-orange-500/50',
+          progressBarClass: 'bg-orange-500',
+          quote: 'Contando secretos que mañana lamentará 🎤',
+          icon: '🥴'
+        };
+      } else if (currentBAC >= 0.5) {
+        status = {
+          level: 'Chisposo / Entonado',
+          badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+          progressBarClass: 'bg-amber-400',
+          quote: 'La risa floja y proponiendo planes locos 🍻',
+          icon: '🤪'
+        };
+      } else if (currentBAC > 0.05) {
+        status = {
+          level: 'Punto Alegre / En Marcha',
+          badgeClass: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+          progressBarClass: 'bg-yellow-400',
+          quote: 'Charla fluida y desinhibición inicial 😄',
+          icon: '🥂'
+        };
+      }
+
+      return {
+        currentBAC: Number(currentBAC.toFixed(2)),
+        theoreticalPeakBAC: Number(theoreticalPeakBAC.toFixed(2)),
+        totalGramsAlcohol: Math.round(totalGramsAlcohol),
+        totalAlcoholDrinksCount,
+        totalSoftDrinksCount,
+        elapsedHours,
+        elapsedMinutes: Math.floor(elapsedMs / (1000 * 60)),
+        status
+      };
+    }
+
+    /* Format minutes to friendly HH:MM in bar */
+    function formatTimeInBar(minutes) {
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      if (h === 0) return `${m} min en el bar`;
+      return `${h}h ${m < 10 ? '0' : ''}${m}m en el bar`;
+    }
+
+    function renderParticipantCards() {
+      const container = document.getElementById('cardsGrid');
+      const emptyMsg = document.getElementById('noParticipantsMsg');
+      const countText = document.getElementById('participantsCountText');
+
+      if (!participants || participants.length === 0) {
+        container.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        countText.innerText = '0 participantes';
+        return;
+      }
+
+      emptyMsg.classList.add('hidden');
+      countText.innerText = `${participants.length} en la mesa`;
+
+      container.innerHTML = participants.map(p => {
+        const stats = calculateParticipantBAC(p);
+        const startTimeStr = new Date(p.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const meterPercent = Math.min(100, Math.round((stats.currentBAC / 2.0) * 100));
+
+        // Quick drink pills of the most frequent
+        const favoriteBeers = ['cana', 'pinta', 'tercio', 'tinto', 'blanco_hielo'];
+
+        return `
+          <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between transition hover:border-slate-700 relative overflow-hidden group">
+            <!-- Glow background highlight according to drunkenness -->
+            <div class="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-10 blur-2xl ${stats.currentBAC > 0.8 ? 'bg-rose-500' : stats.currentBAC > 0.3 ? 'bg-amber-500' : 'bg-emerald-500'} pointer-events-none"></div>
+
+            <div>
+              <!-- Header: Avatar, Name, Arrival Time -->
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="text-3xl p-2 bg-slate-800 rounded-2xl border border-slate-700 shadow-inner">
+                    ${p.avatar || '😎'}
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-black text-slate-100 flex items-center gap-1.5">
+                      ${escapeHtml(p.name)}
+                    </h3>
+                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                      <span>⏱️ Llegó a las <strong class="text-slate-300 font-semibold">${startTimeStr}</strong></span>
+                      <span>&bull;</span>
+                      <span class="text-amber-400 font-medium">${formatTimeInBar(stats.elapsedMinutes)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Dropdown / Delete -->
+                <button onclick="removeFriend('${p.id}')" title="Eliminar participante" class="text-slate-500 hover:text-rose-400 p-1 transition opacity-40 group-hover:opacity-100">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+              </div>
+
+              <!-- Mamaómetro meter display -->
+              <div class="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/80 mb-4 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-base">${stats.status.icon}</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Nivel de Mamao:</span>
+                  </div>
+                  <span class="text-xs font-black px-2 py-0.5 rounded-full border ${stats.status.badgeClass}">
+                    ${stats.status.level}
+                  </span>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden relative">
+                  <div class="h-full rounded-full transition-all duration-700 ${stats.status.progressBarClass}" style="width: ${meterPercent}%"></div>
+                </div>
+
+                <div class="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
+                  <span>Tasa actual: <strong class="text-slate-200 font-bold">${stats.currentBAC} g/L</strong></span>
+                  <span class="text-slate-500 italic truncate max-w-[170px]">${stats.status.quote}</span>
+                </div>
+              </div>
+
+              <!-- Consumptions Breakdown Summary -->
+              <div class="mb-4">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-400 mb-2">
+                  <span>CONSUMICIONES TOMADAS</span>
+                  <span class="text-amber-400">${stats.totalAlcoholDrinksCount} con alcohol &middot; ${stats.totalSoftDrinksCount} sin</span>
+                </div>
+                
+                <div class="flex flex-wrap gap-1.5 min-h-[32px]">
+                  ${renderDrinkBadges(p.drinks)}
+                </div>
+              </div>
+            </div>
+
+            <!-- Tap actions: Quick add drinks -->
+            <div class="space-y-2 pt-3 border-t border-slate-800/80">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                <span>Sumar una ronda rápida (+1):</span>
+                <button onclick="openDrinkModal('${p.id}')" class="text-amber-400 hover:text-amber-300 font-bold text-xs underline">
+                  Ver carta completa ➕
+                </button>
+              </span>
+
+              <!-- Quick Bar: Caña, Tercio, Pinta, Tinto, Blanco, Coca-Cola -->
+              <div class="grid grid-cols-4 gap-1.5">
+                <button onclick="addDrinkToParticipant('${p.id}', 'cana')" class="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-800 hover:bg-amber-500/20 hover:border-amber-500/60 border border-slate-700/60 transition tap-effect" title="Sumar Caña">
+                  <span class="text-lg">🍺</span>
+                  <span class="text-[10px] font-bold text-slate-200 mt-0.5">+ Caña</span>
+                </button>
+                <button onclick="addDrinkToParticipant('${p.id}', 'tercio')" class="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-800 hover:bg-amber-500/20 hover:border-amber-500/60 border border-slate-700/60 transition tap-effect" title="Sumar Tercio">
+                  <span class="text-lg">🍾</span>
+                  <span class="text-[10px] font-bold text-slate-200 mt-0.5">+ Tercio</span>
+                </button>
+                <button onclick="addDrinkToParticipant('${p.id}', 'tinto')" class="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 hover:border-rose-500/60 border border-slate-700/60 transition tap-effect" title="Sumar Vino Tinto">
+                  <span class="text-lg">🍷</span>
+                  <span class="text-[10px] font-bold text-slate-200 mt-0.5">+ Tinto</span>
+                </button>
+                <button onclick="addDrinkToParticipant('${p.id}', 'cocacola')" class="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-800 hover:bg-sky-500/20 hover:border-sky-500/60 border border-slate-700/60 transition tap-effect" title="Sumar Coca-Cola">
+                  <span class="text-lg">🥤</span>
+                  <span class="text-[10px] font-bold text-slate-200 mt-0.5">+ Cola</span>
+                </button>
+              </div>
+
+              <!-- Quick row 2: Quinto, Pinta, Blanco, Agua -->
+              <div class="grid grid-cols-4 gap-1.5 pt-1">
+                <button onclick="addDrinkToParticipant('${p.id}', 'quinto')" class="p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-[11px] font-semibold text-slate-300 text-center tap-effect truncate">
+                  + Quinto
+                </button>
+                <button onclick="addDrinkToParticipant('${p.id}', 'pinta')" class="p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-[11px] font-semibold text-slate-300 text-center tap-effect truncate">
+                  + Pinta
+                </button>
+                <button onclick="addDrinkToParticipant('${p.id}', 'blanco_hielo')" class="p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-[11px] font-semibold text-slate-300 text-center tap-effect truncate">
+                  + Blanco
+                </button>
+                <button onclick="addDrinkToParticipant('${p.id}', 'botella_agua')" class="p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-[11px] font-semibold text-cyan-300 text-center tap-effect truncate">
+                  + Agua 💧
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* Render badges for drinks already consumed */
+    function renderDrinkBadges(drinksObj) {
+      if (!drinksObj) return '<span class="text-xs text-slate-500 italic">Aún no ha pedido nada</span>';
+      const items = Object.entries(drinksObj).filter(([_, count]) => count > 0);
+      if (items.length === 0) {
+        return '<span class="text-xs text-slate-500 italic">Vaso vacío. ¡Toca pedir!</span>';
+      }
+
+      return items.map(([drinkId, count]) => {
+        const item = DRINKS_CATALOG.find(d => d.id === drinkId);
+        if (!item) return '';
+        return `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-200">
+            <span>${item.icon}</span>
+            <span>${item.name}:</span>
+            <strong class="text-amber-400">${count}</strong>
+            <button onclick="removeOneDrink('${drinkId}')" class="text-slate-500 hover:text-rose-400 ml-0.5 text-xs font-bold" title="Restar 1 (en caso de error)">✕</button>
+          </span>
+        `;
+      }).join('');
+    }
+
+    /* Helper: Escape HTML strings */
+    function escapeHtml(string) {
+      const div = document.createElement('div');
+      div.innerText = string;
+      return div.innerHTML;
+    }
+
+    function renderLeaderboard() {
+      const tbody = document.getElementById('leaderboardTbody');
+      const top3Container = document.getElementById('podiumTop3');
+      const sortCriterion = document.getElementById('leaderboardOrder').value;
+
+      if (!participants || participants.length === 0) {
+        top3Container.innerHTML = '<p class="text-sm text-slate-500 col-span-3 text-center py-4">No hay participantes registrados todavía.</p>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-500">Mesa vacía.</td></tr>';
+        return;
+      }
+
+      // Calculate stats for all
+      const enriched = participants.map(p => {
+        return {
+          ...p,
+          stats: calculateParticipantBAC(p)
+        };
+      });
+
+      // Sort according to selection
+      enriched.sort((a, b) => {
+        if (sortCriterion === 'drunk') {
+          return b.stats.currentBAC - a.stats.currentBAC;
+        } else if (sortCriterion === 'totalAlcohol') {
+          return b.stats.totalAlcoholDrinksCount - a.stats.totalAlcoholDrinksCount;
+        } else if (sortCriterion === 'softDrinks') {
+          return b.stats.totalSoftDrinksCount - a.stats.totalSoftDrinksCount;
+        } else if (sortCriterion === 'time') {
+          return b.stats.elapsedMinutes - a.stats.elapsedMinutes;
+        }
+        return b.stats.currentBAC - a.stats.currentBAC;
+      });
+
+      // Render Top 3 Cards
+      const medals = ['🥇', '🥈', '🥉'];
+      const borderGradients = [
+        'from-amber-400 to-yellow-600 border-amber-400',
+        'from-slate-300 to-slate-500 border-slate-300',
+        'from-amber-700 to-orange-900 border-amber-700'
+      ];
+
+      top3Container.innerHTML = enriched.slice(0, 3).map((p, idx) => {
+        return `
+          <div class="bg-gradient-to-b from-slate-800 to-slate-900 border-2 ${borderGradients[idx] || 'border-slate-700'} rounded-2xl p-4 text-center relative shadow-lg">
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl">${medals[idx]}</span>
+            <div class="text-4xl mt-1 mb-1">${p.avatar}</div>
+            <h4 class="font-extrabold text-base text-white">${escapeHtml(p.name)}</h4>
+            <p class="text-xs text-amber-400 font-bold">${p.stats.currentBAC} g/L estimado</p>
+            <p class="text-[11px] text-slate-400 mt-1">${p.stats.totalAlcoholDrinksCount} alcohol &middot; ${p.stats.totalSoftDrinksCount} sin</p>
+            <span class="mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${p.stats.status.badgeClass}">
+              ${p.stats.status.level}
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      // Render Table rows
+      tbody.innerHTML = enriched.map((p, index) => {
+        const startTimeStr = new Date(p.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-3 px-3 font-black text-amber-400">${index + 1}</td>
+            <td class="py-3 px-3 flex items-center gap-2 font-bold text-slate-100">
+              <span class="text-xl">${p.avatar}</span>
+              <span>${escapeHtml(p.name)}</span>
+            </td>
+            <td class="py-3 px-3 text-slate-400 text-xs">
+              ${startTimeStr} (${p.stats.elapsedMinutes}m)
+            </td>
+            <td class="py-3 px-3 text-center text-xs">
+              <span class="inline-block px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold mr-1">🍺 ${p.stats.totalAlcoholDrinksCount}</span>
+              <span class="inline-block px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">💧 ${p.stats.totalSoftDrinksCount}</span>
+            </td>
+            <td class="py-3 px-3 text-center font-mono font-black text-sm ${p.stats.currentBAC >= 0.8 ? 'text-rose-400' : 'text-amber-400'}">
+              ${p.stats.currentBAC} g/L
+            </td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded-full text-xs font-semibold border ${p.stats.status.badgeClass}">
+                ${p.stats.status.level}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function populateCatalogView() {
+      const catalogContainer = document.getElementById('catalogDrinksList');
+      catalogContainer.innerHTML = DRINKS_CATALOG.map(d => {
+        return `
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-2xl">${d.icon}</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-md ${d.abv > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-cyan-500/20 text-cyan-400'}">
+                ${d.abv > 0 ? d.abv + '% vol' : '0.0% Sin Alcohol'}
+              </span>
+            </div>
+            <h4 class="font-bold text-slate-200 text-sm">${d.name}</h4>
+            <p class="text-xs text-slate-400">${d.desc}</p>
+            <div class="text-[11px] text-slate-500 pt-1">
+              Volumen: <strong>${d.volMl} ml</strong> &middot; Alcohol puro: <strong>${d.abv > 0 ? (d.volMl * (d.abv/100) * 0.8).toFixed(1) + 'g' : '0g'}</strong>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function populateDrinkModalButtons() {
+      const beerContainer = document.getElementById('modalBeerButtons');
+      const wineContainer = document.getElementById('modalWineButtons');
+      const softContainer = document.getElementById('modalSoftButtons');
+
+      const beers = DRINKS_CATALOG.filter(d => d.category === 'beer');
+      const wines = DRINKS_CATALOG.filter(d => d.category === 'wine');
+      const softs = DRINKS_CATALOG.filter(d => d.category === 'soft');
+
+      beerContainer.innerHTML = beers.map(d => `
+        <button onclick="addDrinkToCurrentParticipant('${d.id}')" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/80 hover:bg-amber-500/20 border border-slate-700/80 hover:border-amber-500/60 transition tap-effect">
+          <span class="text-2xl mb-1">${d.icon}</span>
+          <span class="text-xs font-bold text-slate-200">${d.name}</span>
+          <span class="text-[10px] text-amber-400">${d.volMl}ml &middot; ${d.abv}%</span>
+        </button>
+      `).join('');
+
+      wineContainer.innerHTML = wines.map(d => `
+        <button onclick="addDrinkToCurrentParticipant('${d.id}')" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/80 hover:bg-rose-500/20 border border-slate-700/80 hover:border-rose-500/60 transition tap-effect">
+          <span class="text-2xl mb-1">${d.icon}</span>
+          <span class="text-xs font-bold text-slate-200">${d.name}</span>
+          <span class="text-[10px] text-rose-400">${d.volMl}ml &middot; ${d.abv}%</span>
+        </button>
+      `).join('');
+
+      softContainer.innerHTML = softs.map(d => `
+        <button onclick="addDrinkToCurrentParticipant('${d.id}')" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/80 hover:bg-sky-500/20 border border-slate-700/80 hover:border-sky-500/60 transition tap-effect">
+          <span class="text-2xl mb-1">${d.icon}</span>
+          <span class="text-xs font-bold text-slate-200 text-center">${d.name}</span>
+          <span class="text-[10px] text-sky-400">0% Alcohol</span>
+        </button>
+      `).join('');
+    }
+
+    function openAddMemberModal() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('inputFriendTime').value = `${hours}:${minutes}`;
+      document.getElementById('inputFriendName').value = '';
+      document.getElementById('modalAddFriend').classList.remove('hidden');
+      document.getElementById('modalAddFriend').classList.add('flex');
+      document.getElementById('inputFriendName').focus();
+    }
+
+    function closeAddMemberModal() {
+      document.getElementById('modalAddFriend').classList.add('hidden');
+      document.getElementById('modalAddFriend').classList.remove('flex');
+    }
+
+    function selectAvatar(emoji) {
+      selectedAvatar = emoji;
+      document.querySelectorAll('.avatar-option').forEach(btn => {
+        if (btn.innerText === emoji) {
+          btn.classList.add('border-amber-500');
+          btn.classList.remove('border-transparent');
+        } else {
+          btn.classList.remove('border-amber-500');
+          btn.classList.add('border-transparent');
+        }
+      });
+    }
+
+    function saveNewFriend() {
+      const name = document.getElementById('inputFriendName').value.trim();
+      const timeVal = document.getElementById('inputFriendTime').value;
+      const weight = parseInt(document.getElementById('inputFriendWeight').value, 10) || 70;
+
+      if (!name) {
+        showToast('⚠️ Introduce un nombre para el colega', 'warning');
+        return;
+      }
+
+      // Calculate epoch timestamp based on input time
+      let startTime = Date.now();
+      if (timeVal) {
+        const [h, m] = timeVal.split(':').map(Number);
+        const arrivalDate = new Date();
+        arrivalDate.setHours(h, m, 0, 0);
+        // If set to future time in the same day, adjust to current or past
+        if (arrivalDate.getTime() > Date.now()) {
+          startTime = Date.now();
+        } else {
+          startTime = arrivalDate.getTime();
+        }
+      }
+
+      const newParticipant = {
+        id: 'p_' + Date.now(),
+        name,
+        avatar: selectedAvatar || '😎',
+        weight,
+        startTime,
+        drinks: {}
+      };
+
+      participants.push(newParticipant);
+      saveState();
+      renderParticipantCards();
+      renderLeaderboard();
+      closeAddMemberModal();
+      showToast(`🍻 ¡${name} se ha unido a la mesa del bar!`, 'success');
+      playChime('drink');
+    }
+
+    function removeFriend(id) {
+      const p = participants.find(item => item.id === id);
+      if (!p) return;
+      // Friendly in-app confirmation using non-native popup style
+      const confirmDelete = window.confirm(`¿Seguro que quieres quitar a ${p.name} de la ronda?`);
+      if (confirmDelete) {
+        participants = participants.filter(item => item.id !== id);
+        saveState();
+        renderParticipantCards();
+        renderLeaderboard();
+        showToast(`🗑️ ${p.name} ha dejado la mesa`, 'info');
+      }
+    }
+
+    function addDrinkToParticipant(participantId, drinkId) {
+      const p = participants.find(item => item.id === participantId);
+      if (!p) return;
+
+      if (!p.drinks) p.drinks = {};
+      p.drinks[drinkId] = (p.drinks[drinkId] || 0) + 1;
+
+      const drink = DRINKS_CATALOG.find(d => d.id === drinkId);
+      if (drink && drink.abv > 0) {
+        playChime('drink');
+      } else {
+        playChime('water');
+      }
+
+      saveState();
+      renderParticipantCards();
+      renderLeaderboard();
+      showToast(`+1 ${drink ? drink.name : 'Bebida'} para ${p.name}!`, 'success');
+    }
+
+    function openDrinkModal(participantId) {
+      currentModalParticipantId = participantId;
+      const p = participants.find(item => item.id === participantId);
+      if (!p) return;
+      document.getElementById('targetFriendNameTitle').innerText = `${p.avatar} ${p.name}`;
+      document.getElementById('modalQuickDrink').classList.remove('hidden');
+      document.getElementById('modalQuickDrink').classList.add('flex');
+    }
+
+    function closeDrinkModal() {
+      document.getElementById('modalQuickDrink').classList.add('hidden');
+      document.getElementById('modalQuickDrink').classList.remove('flex');
+      currentModalParticipantId = null;
+    }
+
+    function addDrinkToCurrentParticipant(drinkId) {
+      if (!currentModalParticipantId) return;
+      addDrinkToParticipant(currentModalParticipantId, drinkId);
+    }
+
+    function removeOneDrink(drinkId) {
+      // Find the last touched participant or target
+      // If modal is open:
+      const targetId = currentModalParticipantId || (participants[0] ? participants[0].id : null);
+      if (!targetId) return;
+      const p = participants.find(x => x.id === targetId);
+      if (p && p.drinks && p.drinks[drinkId] > 0) {
+        p.drinks[drinkId]--;
+        playChime('undo');
+        saveState();
+        renderParticipantCards();
+        renderLeaderboard();
+        showToast(`-1 ${drinkId} corregido`, 'info');
+      }
+    }
+
+    function updateGlobalCounters() {
+      let totalAlc = 0;
+      let totalSoft = 0;
+
+      participants.forEach(p => {
+        Object.entries(p.drinks || {}).forEach(([drinkId, count]) => {
+          const drink = DRINKS_CATALOG.find(d => d.id === drinkId);
+          if (drink) {
+            if (drink.abv > 0) {
+              totalAlc += count;
+            } else {
+              totalSoft += count;
+            }
+          }
+        });
+      });
+
+      document.getElementById('globalTotalAlcoholDrinks').innerText = totalAlc;
+      document.getElementById('globalTotalSoftDrinks').innerText = totalSoft;
+    }
+
+    function switchMainTab(tab) {
+      const viewCards = document.getElementById('viewCards');
+      const viewPodium = document.getElementById('viewPodium');
+      const viewCatalog = document.getElementById('viewCatalog');
+
+      const btnCards = document.getElementById('tabBtnCards');
+      const btnPodium = document.getElementById('tabBtnPodium');
+      const btnCatalog = document.getElementById('tabBtnCatalog');
+
+      // Hide all
+      viewCards.classList.add('hidden');
+      viewPodium.classList.add('hidden');
+      viewCatalog.classList.add('hidden');
+
+      btnCards.className = "px-3.5 py-1.5 rounded-lg transition text-slate-300 hover:text-white";
+      btnPodium.className = "px-3.5 py-1.5 rounded-lg transition text-slate-300 hover:text-white";
+      btnCatalog.className = "px-3.5 py-1.5 rounded-lg transition text-slate-300 hover:text-white";
+
+      if (tab === 'cards') {
+        viewCards.classList.remove('hidden');
+        btnCards.className = "px-3.5 py-1.5 rounded-lg transition bg-amber-500 text-slate-950 font-bold shadow";
+        renderParticipantCards();
+      } else if (tab === 'podium') {
+        viewPodium.classList.remove('hidden');
+        btnPodium.className = "px-3.5 py-1.5 rounded-lg transition bg-amber-500 text-slate-950 font-bold shadow";
+        renderLeaderboard();
+      } else if (tab === 'catalog') {
+        viewCatalog.classList.remove('hidden');
+        btnCatalog.className = "px-3.5 py-1.5 rounded-lg transition bg-amber-500 text-slate-950 font-bold shadow";
+        populateCatalogView();
+      }
+    }
+
+    function openResetModal() {
+      const ok = window.confirm("¿Seguro que quieres reiniciar la cuenta de todo el grupo para empezar un nuevo jueves?");
+      if (ok) {
+        participants = [];
+        saveState();
+        renderParticipantCards();
+        renderLeaderboard();
+        showToast("Se ha reiniciado la ronda de hoy", "info");
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      let bg = 'bg-slate-800 border-slate-700 text-slate-200';
+      if (type === 'success') bg = 'bg-emerald-950/90 border-emerald-700 text-emerald-200';
+      if (type === 'warning') bg = 'bg-amber-950/90 border-amber-700 text-amber-200';
+      if (type === 'info') bg = 'bg-slate-900 border-slate-700 text-white';
+
+      toast.className = `px-4 py-2.5 rounded-2xl border shadow-2xl text-xs font-semibold backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${bg}`;
+      toast.innerText = message;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2600);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('currentLiveClock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // Initialize application
+    window.onload = function() {
+      loadState();
+      populateDrinkModalButtons();
+      populateCatalogView();
+      renderParticipantCards();
+      renderLeaderboard();
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      // Real-time metabolic updates: recalculate alcohol every 15 seconds automatically
+      setInterval(() => {
+        // Re-render only cards if visible to refresh elapsed time and metabolized alcohol levels
+        const viewCards = document.getElementById('viewCards');
+        if (!viewCards.classList.contains('hidden')) {
+          renderParticipantCards();
+        }
+        const viewPodium = document.getElementById('viewPodium');
+        if (!viewPodium.classList.contains('hidden')) {
+          renderLeaderboard();
+        }
+      }, 15000);
+    };
+  </script>
+</body>
+</html>
